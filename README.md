@@ -1,5 +1,7 @@
 # Meshing around with Istio and Amazon EKS
 
+![Image of Elasticband Ball](images/elastic_band_ball.png)
+
 In this post, as you may have gathered from the title, I'm going to be playing around with Istio and Amazon EKS. Earlier this year (2018) I presented a demo of deploying Istio to EKS. However, at that time, EKS was missing support for dynamic admission controllers. This meant that a few additional steps had to be taken in order for Istio to be deployed correctly in to an EKS based Kubernetes cluster.
 
 In October of this year support for Dynamic Admission Controllers was added to EKS. I wanted to revisit the demo I put together previosly to understand if this new functionality simplified the process of deploying and operating Istio on EKS.
