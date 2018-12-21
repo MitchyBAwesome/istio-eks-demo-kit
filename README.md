@@ -91,9 +91,9 @@ Istio requires a number of customer resources[1] to be created within the Kubern
 kubectl apply -f install/kubernetes/helm/istio/templates/crds.yaml
 ```
 
-[1]A custom resource is an object that extends the Kubernetes API or allows you to introduce your own API into a project or a cluster.
+[1]: A custom resource is an object that extends the Kubernetes API or allows you to introduce your own API into a project or a cluster.
 
-[2]A custom resource definition (CRD) file defines your own object kinds and lets the API Server handle the entire lifecycle. Deploying a CRD into the cluster causes the Kubernetes API server to begin serving the specified custom resource.
+[2]: A custom resource definition (CRD) file defines your own object kinds and lets the API Server handle the entire lifecycle. Deploying a CRD into the cluster causes the Kubernetes API server to begin serving the specified custom resource.
 
 ## Installing Istio using Helm
 
