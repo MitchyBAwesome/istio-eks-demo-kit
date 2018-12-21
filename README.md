@@ -10,15 +10,15 @@ So, let's go!
 
 I'm going to start by creating a new EKS cluster. I'm happy to report that as of December 20th 2018 Amazon EKS is now supported in my home region on ap-southeast-2 (Sydney). I'll be creating my clusters in that region using the awseome command line tool eksctl.
 
-```Shell
+``` command
 eksctl create cluster --region ap-southeast-2
 ```
 
-## Testing 1 2 3
+## Testing 1 ... 2 ... 3
 
 After a few minutes, the EKS control plane and nodes should be up and running. Let's run a few simple tests to ensure that everything is looking healthy.
 
-```Shell
+``` command
 aws eks list-clusters --region ap-souteast-2
 ```
 
@@ -30,11 +30,11 @@ aws eks list-clusters --region ap-souteast-2
 }
 ```
 
-```Shell
+``` command
 kubectl get nodes
 ```
 
-```Shell 
+``` command
 NAME                                                STATUS    ROLES     AGE       VERSION
 ip-192-168-38-190.ap-southeast-2.compute.internal   Ready     <none>    3m        v1.11.5
 ip-192-168-93-109.ap-southeast-2.compute.internal   Ready     <none>    3m        v1.11.5
@@ -57,13 +57,13 @@ kubectl create -f https://raw.githubusercontent.com/istio/istio/master/install/k
 
 Next, we will initialise Helm within the EKS cluster using the serice account which we created earlier.
 
-```Shell
+``` command
 helm init --service-account tiller
 ```
 
 Let's do a quick check to ensure that things were installed as expected
 
-```Shell
+``` command
 kubectl get pods --all-namespaces
 ```
 
@@ -73,13 +73,13 @@ You should expect to see a pod with a **NAME** that looks something like this **
 
 Before we can install Istio, we need to download the Istio components. 
 
-```Shell
+``` command
 curl -L https://git.io/getLatestIstio | sh -
 ```
 
 Switch to the newly created directory.
 
-```Shell
+``` bash
 cd istio-1.0.x
 ```
 
@@ -87,7 +87,7 @@ cd istio-1.0.x
 
 Istio requires a number of customer resources[1] to be created within the Kubernetes API to support it's various modes of operation and features. We can use the pre-provided CRD[2] (Custom resource definitions) to create these custom resources within the Kubernetes API.
 
-```Shell
+``` command
 kubectl apply -f install/kubernetes/helm/istio/templates/crds.yaml
 ```
 
@@ -103,7 +103,7 @@ In 2018 BDAC (Before Dynamic Admission Controllers) in order to sucesfully insta
 
 However, in 2018 ADAC (After Dynamic Admission Controllers) we can deloy simply, using the following command:
 
-```Shell
+``` command
 helm install install/kubernetes/helm/istio --name istio --namespace istio-system \
 --set servicegraph.enabled=true \
 --set tracing.enabled=true \
@@ -114,7 +114,7 @@ helm install install/kubernetes/helm/istio --name istio --namespace istio-system
 
 In order for the automatic sidecar injection to function, we need to add some metadata to the Kubernetes namespace in to which we plan to deploy our pods. We'll use a simple label with the key "istio-injection" and the value "enabled".
 
-```Shell
+``` command
 kubectl label namespace default istio-injection=enabled
 ```
 
@@ -127,25 +127,25 @@ Nothing special. When a call is made to the **gopher-requester**, using **curl**
 
 Let's start with the **gopher-requester**
 
-```Shell
+``` command
 kubectl apply -f ../gopher-requester/deployment.yaml
 ```
 
 And now the **gopher-distributor**
 
-```Shell
+``` command
 kubectl apply -f ../gopher-distributor/deployment.yaml
 ```
 
 Once these pods have been deployed, you should be able to check if the sidecar container has been injected
 
-```Shell
+``` command
 kubectl get pods
 ```
 
 The output should look something like this
 
-```Shell
+``` command
 NAME                                  READY     STATUS    RESTARTS   AGE
 gopher-distributor-694fd4f4db-24csn   2/2       Running   0          1m
 gopher-distributor-694fd4f4db-4hk9t   2/2       Running   0          1m
@@ -156,13 +156,14 @@ gopher-requester-7d5cbc7989-whxcm     2/2       Running   0          36s
 ```
 
 If you unpack one of those pods using some JQ-foo ...
+
 ```
 kubectl get po/gopher-distributor-694fd4f4db-24csn -o json | jq '.spec.containers[].name'
 ```
 
 ... we should see that there are infact two containers running within the context of the pod. One for our core application, which in this case is our **gopher-distributor** and another, our Istio proxy sidecar (Envoy)
 
-```Shell
+``` command
 "gopher-distributor"
 "istio-proxy"
 ```
@@ -171,25 +172,32 @@ kubectl get po/gopher-distributor-694fd4f4db-24csn -o json | jq '.spec.container
 
 We'll use **curl** to make sure that we're getting a response back from our application.
 
-```Shell
+``` command
+
 curl $(kubectl get svc gopher-requester -o json | jq '.status.loadBalancer.ingress[0].hostname' | tr -d '"')
+
 ```
 
 Hopeully we now see something like this:
 
-```Shell
+``` command
+
 Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-gnn4g
+
 ```
 
 Let's now open up another terminal emulator window or tab. We will use the following ```while``` statement to generate some traffic to our application.
 
-```Shell
+``` bash
+
 while true;do curl $(kubectl get svc -l app=gopher -o jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}');sleep 1;done
+
 ```
 
 We should now be seeing a fairly even distribution of responses back from different instances of the **gopher-distributor** service running within the cluster.
 
-```Shell
+``` command
+
 Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-gnn4g
 Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-4hk9t
 Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-24csn
@@ -197,13 +205,15 @@ Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-gnn4g
 Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-4hk9t
 Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-24csn
 Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-gnn4g
+
 ```
 
 ## Laying down some ground rules
 
 Before Istio can start doing anything useful for us, we need to tell it about our application and the services that make up our application. Let's start by creating **VirtualServices** (these are API resources) that represent out **gopher-requester** and **gopher-distribtor** services 
 
-```Shell
+``` bash
+
 cat <<EOF | kubectl apply -f -
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -251,14 +261,17 @@ spec:
     labels:
       version: v2
 EOF
+
 ```
 
-We should see some output confirming that our routing rules have been created. Sweet! 
+We should see some output confirming that our routing rules have been created. Sweet!
 
-```Shell
+``` command
+
 virtualservice.networking.istio.io "gopher-requester-virtual-service" created
 virtualservice.networking.istio.io "gopher-distributor-virtual-service" created
 destinationrule.networking.istio.io "gopher-distributor-route-rule" created
+
 ```
 
 ## Dark Launch
@@ -269,23 +282,28 @@ Let's now experiment with a particularly cool feature of Istio called traffic mi
 
 We'll start by deploying a new version of our **gopher-distributor** service:
 
-```Shell
+``` command
+
 kubectl apply -f ../gopher-distributor-v2/deployment.yaml
+
 ```
 
 Checking back in with our test call in the other terminal windoe/tab, we see everything looks pretty much normal. We are still getting responses from v1 of our distributor.
 
-```Shell
+``` command
+
 Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-gnn4g
 Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-4hk9t
 Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-24csn
 ...
 ...
+
 ```
 
 Let's now up the **VirtualService** for the **gopher-distributor** to include some traffic **mirror** magic. 
 
-```Shell
+``` bash
+
 cat <<EOF | kubectl apply -f -
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -304,6 +322,7 @@ spec:
         host: gopher-distributor.default.svc.cluster.local
         subset: v2
 EOF
+
 ```
 
 If we deconstruct the updated rule, all it's really saying is for 100 percent of requests to the hostname **gopher-distributor.default.svc.cluster.local** send requests to the v1 subset of that service, but also **mirror** the requests to the v2 subset (which is the version we just deployed). 
@@ -314,15 +333,15 @@ Okay, so we've done that, but nothing really changed. How do we know traffic is 
 
 We're going to tap in to the awesome port-forward function of **kubectl** to access the Grafana instance that Istio very kindly configured for us.
 
-```Shell
+``` command
+
 kubectl -n istio-system port-forward $(kubectl -n istio-system get pod -l app=grafana -o jsonpath='{.items[0].metadata.name}') 3000:3000 &
+
 ```
 
 Once that's done, up your browser of choice and then navigate to the following URL:
 
-```
-http://localhost:3000/d/1/istio-mesh-dashboard
-``` 
+[http://localhost:3000/d/1/istio-mesh-dashboard](http://localhost:3000/d/1/istio-mesh-dashboard)
 
 You should now be able to see two instances of the **gopher-distributor** service. **v1** and **v2**.
 
@@ -334,7 +353,8 @@ Okay, so now that we are happy that the new version of our **gopher-distributor*
 
 This next rule us going to update the gopher-distributor **VirtualServce** and split requests 50/50 between v1 and v2.
 
-```Shell
+``` bash
+
 cat <<EOF | kubectl apply -f -
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -354,11 +374,13 @@ spec:
         subset: v2
       weight: 50
 EOF
+
 ```
 
 If we check back in with our test call in the other emulator window/tab, we should now see something a little different. Roughly 50 percent of the responses are coming from the v2 instance of the **gopher-distributor** service:
 
-```Shell
+``` command
+
 Request >> Gopher Version 2 from pod gopher-distributor-v2-6d5887bb96-vzc4x (817b00a0b7cca7a5)
 Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-24csn
 Request >> Gopher Version 2 from pod gopher-distributor-v2-6d5887bb96-xjh45 (4246faf2c16d238a)
@@ -366,13 +388,15 @@ Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-gnn4g
 Request >> Gopher Version 2 from pod gopher-distributor-v2-6d5887bb96-xcrxh (6f33515876dfa2eb)
 Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-24csn
 ...
+
 ```
 
 **COOOL!**
 
 Let's now wrap things up with a full cutover and send 100 percent of requests to the new v2 instance of the **gopher-distributor** service.
 
-```Shell
+``` bash
+
 cat <<EOF | kubectl apply -f -
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -388,19 +412,22 @@ spec:
         subset: v2
       weight: 100
 EOF
+
 ```
 
 You'll see all of responses are coming back from the new v2 instance of the **gopher-distributor** service.
 
-```Shell
+``` command
+
 Request >> Gopher Version 2 from pod gopher-distributor-v2-6d5887bb96-xcrxh (353130990d3d3bad)
 Request >> Gopher Version 2 from pod gopher-distributor-v2-6d5887bb96-vzc4x (93ec1cdc162261e4)
 Request >> Gopher Version 2 from pod gopher-distributor-v2-6d5887bb96-xjh45 (6986a4496f15c931)
 Request >> Gopher Version 2 from pod gopher-distributor-v2-6d5887bb96-xcrxh (c6d4ab12d05ab45f)
 Request >> Gopher Version 2 from pod gopher-distributor-v2-6d5887bb96-vzc4x (67d56a7d02b15803)
 Request >> Gopher Version 2 from pod gopher-distributor-v2-6d5887bb96-xjh45 (c46eebd43f7eb07b)
+
 ```
 
-## That's a wrap!
+## That's a wrap
 
 As you can see, it's pretty easy to get Istio up and running within EKS. With the introduction of Dynamic Admission Controllers it got even easier to add you services in to the Istio service mesh. Istio offers a lot of really awesome features that remove so much of the heavy lifting that development teams traditionally had to do in order to monitor and operate complex distributed applications.
