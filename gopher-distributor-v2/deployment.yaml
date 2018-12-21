@@ -1,0 +1,45 @@
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: gopher-distributor-v2
+  labels:
+    app: gopher-distributor
+    version: v2
+    stack: gophers
+spec:
+  revisionHistoryLimit: 3
+  replicas: 3
+  selector:
+    matchLabels:
+      app: gopher-distributor
+  template:
+    metadata:
+      labels:
+        app: gopher-distributor
+        version: v2
+    spec:
+      containers:
+      - name: gopher-distributor
+        image: mitchybgood/gopher-distributor:v2
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 80
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gopher-distributor
+  labels:
+    app: gopher-distributor
+spec:
+  ports:
+  - port: 80
+    name: http
+  selector:
+    app: gopher-distributor

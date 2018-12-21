@@ -1,4 +1,4 @@
-# Meshing around with Istio and EKS
+# Meshing around with Istio and Amazon EKS
 
 In this post, as you may have gathered from the title, I'm going to be playing around with Istio and Amazon EKS. Earlier this year (2018) I presented a demo of deploying Istio to EKS. However, at that time, EKS was missing support for dynamic admission controllers. This meant that a few additional steps had to be taken in order for Istio to be deployed correctly in to an EKS based Kubernetes cluster.
 
@@ -22,7 +22,7 @@ After a few minutes, the EKS control plane and nodes should be up and running. L
 aws eks list-clusters --region ap-souteast-2
 ```
 
-```JSON
+``` json
 {
     "clusters": [
         "extravagant-monster-1545334691"
@@ -31,7 +31,9 @@ aws eks list-clusters --region ap-souteast-2
 ```
 
 ``` command
+
 kubectl get nodes
+
 ```
 
 ``` command
@@ -42,15 +44,18 @@ ip-192-168-93-109.ap-southeast-2.compute.internal   Ready     <none>    3m      
 
 Looking good so far!
 
-## Installing helm (used to deploy istio)
+## Installing Helm
 
-We're going to setup Isto within the EKS cluster using Helm[1], so for my next trick, I am going to install Helm in to my EKS cluster.
+We're going to setup Istio within the EKS cluster using Helm[1], so for my next trick, I am going to install Helm in to my EKS cluster.
 
 Begin by creating the service account required by the Tiller[2] service for doing stuff.
 
-```Shell
+``` bash
+
 kubectl create -f https://raw.githubusercontent.com/istio/istio/master/install/kubernetes/helm/helm-service-account.yaml
+
 ```
+
 [1]: Helm is the package manager for Kubernetes. As an operating system package manager makes it easy to install tools on an OS, Helm makes it easy to install applications and resources into Kubernetes clusters.
 
 [2]: Tiller is the in-cluster component of Helm. It interacts directly with the Kubernetes API server to install, upgrade, query, and remove Kubernetes resources. It also stores the objects that represent releases.
@@ -345,7 +350,9 @@ Once that's done, up your browser of choice and then navigate to the following U
 
 You should now be able to see two instances of the **gopher-distributor** service. **v1** and **v2**.
 
-The metrics should look pretty identical and that's down to the mirroring. 
+![Image of Grafana](images/metrics_grafana.png)
+
+The metrics should look pretty identical and that's down to the mirroring.
 
 ## The cutover
 

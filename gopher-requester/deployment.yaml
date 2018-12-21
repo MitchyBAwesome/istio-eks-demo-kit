@@ -1,0 +1,46 @@
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: gopher-requester
+  labels:
+    app: gopher-requester
+spec:
+  revisionHistoryLimit: 3
+  replicas: 3
+  selector:
+    matchLabels:
+      app: gopher-requester
+  template:
+    metadata:
+      labels:
+        app: gopher-requester
+        version: v1
+        stack: gophers
+    spec:
+      containers:
+      - name: gopher-requester
+        image: mitchybgood/gopher-requester:latest
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 80
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gopher-requester
+  labels:
+    app: gopher-requester
+spec:
+  ports:
+  - port: 80
+    name: http
+  selector:
+    app: gopher-requester
+  type:
+    LoadBalancer #ClusterIP , #NodePort , None
