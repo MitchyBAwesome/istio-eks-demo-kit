@@ -195,7 +195,7 @@ Let's now open up another terminal emulator window or tab. We will use the follo
 
 ``` bash
 
-while true;do curl $(kubectl get svc -l app=gopher -o jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}');sleep 1;done
+while true;do curl $(kubectl get svc istio-ingressgateway -n istio-system -o jsonpath='{.status.loadBalancer.ingress[0].hostname}');sleep 1;donee
 
 ```
 
@@ -220,6 +220,21 @@ Before Istio can start doing anything useful for us, we need to tell it about ou
 ``` bash
 
 cat <<EOF | kubectl apply -f -
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: gopher-gateway
+spec:
+  selector:
+    istio: ingressgateway # use Istio default gateway implementation
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "gopher-requester.default.svc.cluster.local"
+---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
