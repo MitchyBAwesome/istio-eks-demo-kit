@@ -1,8 +1,8 @@
 # Meshing around with Istio and Amazon EKS
 
-In this post, as you may have gathered from the title, I'm going to be playing around with Istio and Amazon EKS. Earlier this year (2018) I presented a demo of deploying Istio to EKS. However, at that time, EKS was missing support for dynamic admission controllers. This meant that a few additional steps had to be taken in order for Istio to be deployed correctly in to an EKS based Kubernetes cluster.
+It's time to have a play around with Istio and Amazon EKS. Amazon EKS went GA in 2018. However, at that time, EKS was missing support for dynamic admission controllers. This meant that a few additional steps had to be taken in order for Istio to be deployed correctly in to an EKS based Kubernetes cluster.
 
-In October of this year support for Dynamic Admission Controllers was added to EKS. I wanted to revisit the demo I put together previosly to understand if this new functionality simplified the process of deploying and operating Istio on EKS.
+In October of this year support for Dynamic Admission Controllers was added to EKS. Let's take a look at if this new functionality simplified the process of deploying and operating Istio on EKS.
 
 So, let's go!
 
@@ -173,45 +173,6 @@ kubectl get po/gopher-distributor-694fd4f4db-24csn -o json | jq '.spec.container
 "istio-proxy"
 ```
 
-## Testing our application is responding
-
-We'll use **curl** to make sure that we're getting a response back from our application.
-
-``` command
-
-curl $(kubectl get svc gopher-requester -o json | jq '.status.loadBalancer.ingress[0].hostname' | tr -d '"')
-
-```
-
-Hopeully we now see something like this:
-
-``` command
-
-Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-gnn4g
-
-```
-
-Let's now open up another terminal emulator window or tab. We will use the following ```while``` statement to generate some traffic to our application.
-
-``` bash
-
-while true;do curl $(kubectl get svc istio-ingressgateway -n istio-system -o jsonpath='{.status.loadBalancer.ingress[0].hostname}');sleep 1;donee
-
-```
-
-We should now be seeing a fairly even distribution of responses back from different instances of the **gopher-distributor** service running within the cluster.
-
-``` command
-
-Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-gnn4g
-Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-4hk9t
-Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-24csn
-Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-gnn4g
-Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-4hk9t
-Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-24csn
-Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-gnn4g
-
-```
 
 ## Laying down some ground rules
 
@@ -291,6 +252,46 @@ We should see some output confirming that our routing rules have been created. S
 virtualservice.networking.istio.io "gopher-requester-virtual-service" created
 virtualservice.networking.istio.io "gopher-distributor-virtual-service" created
 destinationrule.networking.istio.io "gopher-distributor-route-rule" created
+
+```
+
+## Testing our application is responding
+
+We'll use **curl** to make sure that we're getting a response back from our application.
+
+``` command
+
+curl $(kubectl get svc gopher-requester -o json | jq '.status.loadBalancer.ingress[0].hostname' | tr -d '"')
+
+```
+
+Hopeully we now see something like this:
+
+``` command
+
+Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-gnn4g
+
+```
+
+Let's now open up another terminal emulator window or tab. We will use the following ```while``` statement to generate some traffic to our application.
+
+``` bash
+
+while true;do curl $(kubectl get svc istio-ingressgateway -n istio-system -o jsonpath='{.status.loadBalancer.ingress[0].hostname}');sleep 1;done
+
+```
+
+We should now be seeing a fairly even distribution of responses back from different instances of the **gopher-distributor** service running within the cluster.
+
+``` command
+
+Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-gnn4g
+Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-4hk9t
+Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-24csn
+Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-gnn4g
+Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-4hk9t
+Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-24csn
+Request >> Gopher Version 1 from pod gopher-distributor-694fd4f4db-gnn4g
 
 ```
 
