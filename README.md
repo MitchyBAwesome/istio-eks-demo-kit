@@ -370,6 +370,28 @@ You should now be able to see two instances of the **gopher-distributor** servic
 
 The metrics should look pretty identical and that's down to the mirroring.
 
+## Portforward for service Graph
+
+Let's take a quick look in to a few of the other out of the box observability (OOTBO) features that ship with Istio out of the box.
+
+We'll start with the service graph. What's a service graph? It's a visual representation of your service mesh.
+
+kubectl -n istio-system port-forward $(kubectl -n istio-system get pod -l app=servicegraph -o jsonpath='{.items[0].metadata.name}') 8088:8088
+
+http://localhost:8088/force/forcegraph.html
+
+You can tweak this URL to include a few query string paramters and fine tune the output of the service graph. For example, if you at the following paramaters ```time_horizon=15s``` and ```filter_empty=true``` then the graph will only show services that are currently receiving traffic, wihin the time horizon of 15 seconds.
+
+Pretty cool!
+
+## Access Tracing Dashboard
+
+The next neat OOTBO feature is tracing. Istio supports sending spans for tracing service calls through the stack. To get the most value out of this, the istio-enable application will need to do a bit of leg work and collect and forward some specific headers. But for the sake of this demo, we'll keep things simple.
+
+kubectl port-forward -n istio-system $(kubectl get pod -n istio-system -l app=jaeger -o jsonpath='{.items[0].metadata.name}') 16686:16686
+
+http://localhost:16686/
+
 ## The cutover
 
 Okay, so now that we are happy that the new version of our **gopher-distributor** service is behaving, let's start an incremental cutover.
